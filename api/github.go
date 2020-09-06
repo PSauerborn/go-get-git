@@ -81,5 +81,11 @@ func isValidHookPayload(signature string, body []byte) bool {
 	actualHash := make([]byte, 20)
 	hex.Decode(actualHash, []byte(signature[5:]))
 
-	return hmac.Equal(signBody([]byte(GitHookSecret), body), actualHash)
+	if hmac.Equal(signBody([]byte(GitHookSecret), body), actualHash) {
+		log.Info("successfully validated git signature")
+		return true
+	} else {
+		log.Error("unable to verify git signature")
+		return false
+	}
 }
