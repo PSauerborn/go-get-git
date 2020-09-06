@@ -1,0 +1,17 @@
+version: '3.7'
+services:
+
+  api:
+    build: ./
+    container_name: go-get-git-api
+    networks:
+    - core
+    - postgres
+    env_file:
+    - .env
+
+networks:
+  core:
+    name: core
+  postgres:
+    name: postgres
