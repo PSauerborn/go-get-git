@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/go-github/github"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -103,29 +104,22 @@ func getRequestBody(ctx *gin.Context) ([]byte, error) {
 // API route used to handle git hooks
 func HandleGitWebHook(ctx *gin.Context) {
 	log.Info("received new git hook trigger")
-	signature := ctx.Request.Header.Get("X-Hub-Signature")
 
-	// extract request body from context
-	body, err := getRequestBody(ctx)
+	// validate git hook request
+	payload, err := github.ValidatePayload(ctx.Request, []byte(GitHookSecret))
 	if err != nil {
-		log.Error("unable to parse request body")
-		StandardHTTP.InvalidRequestBody(ctx)
-		return
-	}
-	// check that signature from git hook is valid
-	if (!isValidHookPayload(signature, body)) {
-		log.Warn("received invalid webhook trigger")
+		log.Error(fmt.Errorf("unable to validate hook signature: %v", err))
 		StandardHTTP.Forbidden(ctx)
 		return
 	}
-
-	var event GitEventHookResponse
-	err = ctx.ShouldBind(&event)
+	// parse event
+	event, err := github.ParseWebHook(github.WebHookType(ctx.Request), payload)
 	if err != nil {
-		log.Error("unable to extract ref header")
-		StandardHTTP.InvalidRequestBody(ctx)
+		log.Error(fmt.Errorf("unable to parse webhook: %v", err))
+		StandardHTTP.InternalServerError(ctx)
 		return
 	}
+
 	log.Info(fmt.Sprintf("received event hook %+v", event))
 	StandardHTTP.Success(ctx)
 }
