@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"io/ioutil"
+	"github.com/google/go-github/github"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -88,4 +89,12 @@ func isValidHookPayload(signature string, body []byte) bool {
 		log.Error("unable to verify git signature")
 		return false
 	}
+}
+
+// function used to check git checks
+func isMasterPushEvent(e *github.PushEvent) bool {
+	if e.Ref != nil {
+		return strings.HasPrefix(*e.Ref, "refs/heads/") && strings.HasSuffix(*e.Ref, "/master")
+	}
+	return false
 }

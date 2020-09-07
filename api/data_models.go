@@ -2,7 +2,8 @@ package main
 
 
 import (
-
+	"time"
+	"github.com/google/uuid"
 )
 
 type NewRegistryEntry struct {
@@ -28,4 +29,23 @@ type NewGitHookRequest struct {
 
 type GitEventHookResponse struct {
 	Ref string `json:"ref" binding:"required"`
+}
+
+// #########################################
+// # Define data models used for persistence
+// #########################################
+
+type GitRepoEntry struct {
+	EntryId     uuid.UUID
+	Uid 	    string
+	RepoUrl     string
+	AccessToken string
+	CreatedAt   time.Time
+}
+
+type GitHookEntry struct {
+	EntryId   uuid.UUID
+	HookId    uuid.UUID
+	CreatedAt time.Time
+	Meta      interface{}
 }

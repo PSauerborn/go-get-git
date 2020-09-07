@@ -117,7 +117,17 @@ func HandleGitWebHook(ctx *gin.Context) {
 		StandardHTTP.InternalServerError(ctx)
 		return
 	}
-
 	log.Info(fmt.Sprintf("received event hook %+v", event))
+
+	switch e := event.(type) {
+	case *github.PushEvent:
+		if isMasterPushEvent(e) {
+			log.Info("received master push event. sending message to worker")
+		} else {
+			log.Info(fmt.Sprintf("received push event to non-master branch %s", *e.Ref))
+		}
+	default:
+		log.Info(fmt.Sprintf("received non-push type event %v", e))
+	}
 	StandardHTTP.Success(ctx)
 }
