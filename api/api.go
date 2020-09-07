@@ -21,8 +21,6 @@ func main() {
 	// configure POST routes used for server
 	router.POST("/go-get-git/registry", Persistence.Middleware(), CreateRegistryEntry)
 	router.POST("/go-get-git/webhook", HandleGitWebHook)
-	router.POST("/go-get-git/test", Test)
-
 	// configure DELETE routes used for server
 	router.DELETE("/go-get-git/registry/:entryId", Persistence.Middleware(), RemoveRegistryEntry)
 
@@ -120,18 +118,6 @@ func HandleGitWebHook(ctx *gin.Context) {
 		return
 	}
 
-	log.Info(fmt.Sprintf("received event hook %+v", event))
-	StandardHTTP.Success(ctx)
-}
-
-func Test(ctx *gin.Context) {
-	var event GitEventHookResponse
-	err := ctx.ShouldBind(&event)
-	if err != nil {
-		log.Error("unable to extract meta from body")
-		StandardHTTP.InvalidRequestBody(ctx)
-		return
-	}
 	log.Info(fmt.Sprintf("received event hook %+v", event))
 	StandardHTTP.Success(ctx)
 }
