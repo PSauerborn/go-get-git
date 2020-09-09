@@ -36,6 +36,7 @@ func generateGitEvent(push GitPushEvent) Event {
 	}
 }
 
+// function used to process git event by sending message over rabbitmq server
 func processGitPushEvent(ctx *gin.Context, e *github.PushEvent) {
 	log.Info(fmt.Sprintf("received master push event for repo %s. sending message to worker", *e.Repo.URL))
 	entry, err := getRepoEntryByRepoUrl(Persistence.Persistence(ctx), *e.Repo.URL)
