@@ -47,6 +47,10 @@ func(response StandardJSONResponse) Forbidden(ctx *gin.Context) {
 	ctx.AbortWithStatusJSON(403, gin.H{ "http_code": 403, "success": false, "message": "access forbidden" })
 }
 
+func(response StandardJSONResponse) NotFound(ctx *gin.Context) {
+	ctx.AbortWithStatusJSON(404, gin.H{ "http_code": 404, "success": false, "message": "not found" })
+}
+
 func(response StandardJSONResponse) InternalServerError(ctx *gin.Context) {
 	ctx.AbortWithStatusJSON(500, gin.H{ "http_code": 500, "success": false, "message": "internal server error" })
 }

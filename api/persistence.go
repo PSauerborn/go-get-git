@@ -96,22 +96,76 @@ func getUserRepoEntries(db *pgx.Conn, uid string) ([]GitRepoEntry, error) {
 	return values, nil
 }
 
-func deleteRepoEntry(db *pgx.Conn, entryId uuid.UUID) {
+func deleteRepoEntry(db *pgx.Conn, entryId uuid.UUID) error {
 	log.Debug(fmt.Sprintf("deleting repo entry with ID %s", entryId))
+	_, err := db.Exec(context.Background(), "DELETE FROM repo_entries WHERE entry_id = $1", entryId)
+	if err != nil {
+		log.Error(fmt.Errorf("unable to delete repo entry %s: %v", entryId, err))
+		return err
+	}
+	return nil
 }
 
-func getHookEntry(db *pgx.Conn, entryId uuid.UUID) {
-	log.Debug(fmt.Sprintf("retrieving hook entry with ID %s", entryId))
+func getHookEntry(db *pgx.Conn, hookId uuid.UUID) (GitHookEntry, error) {
+	log.Debug(fmt.Sprintf("retrieving hook entry with ID %s", hookId))
+	var (entryId uuid.UUID; created time.Time; meta interface{})
+	hook := db.QueryRow(context.Background(), "SELECT entry_id,created_at,meta FROM git_hooks WHERE hook_id = $1", hookId)
+	err := hook.Scan(&entryId, &created, &meta)
+	if err != nil {
+		log.Error(fmt.Errorf("unable to retrieve git hook %s: %v", hookId, err))
+		return GitHookEntry{}, err
+	}
+	return GitHookEntry{ EntryId: entryId, HookId: hookId, CreatedAt: created, Meta: meta }, nil
 }
 
-func getAllHookEntries(db *pgx.Conn) {
+func getAllHookEntries(db *pgx.Conn) ([]GitHookEntry, error) {
 	log.Debug("retrieving all hook entries")
+	values := []GitHookEntry{}
+	rows, err := db.Query(context.Background(), "SELECT entry_id,hook_id,created_at,meta FROM git_hooks")
+	if err != nil {
+		log.Error(fmt.Errorf("unable to retrieve repo entries: %v", err))
+		return values, err
+	}
+	for rows.Next() {
+		var (entryId, hookId uuid.UUID; created time.Time; meta interface{})
+		err := rows.Scan(&entryId, &hookId, &created, &meta)
+		if err != nil {
+			log.Error(fmt.Errorf("unable to process row: %v", err))
+		} else {
+			entry := GitHookEntry{ EntryId: entryId, HookId: hookId, CreatedAt: created, Meta: meta }
+			values = append(values, entry)
+		}
+	}
+	return values, nil
 }
 
-func getUserHookEntries(db *pgx.Conn, uid string) {
-	log.Debug(fmt.Sprintf("retrieving hook entries for user %s", uid))
+func getAllHookEntriesByEntryId(db *pgx.Conn, entryId uuid.UUID) ([]GitHookEntry, error) {
+	log.Debug("retrieving all hook entries")
+	values := []GitHookEntry{}
+	rows, err := db.Query(context.Background(), "SELECT entry_id,hook_id,created_at,meta FROM git_hooks WHERE entry_id = $1", entryId)
+	if err != nil {
+		log.Error(fmt.Errorf("unable to retrieve repo entries: %v", err))
+		return values, err
+	}
+	for rows.Next() {
+		var (entryId, hookId uuid.UUID; created time.Time; meta interface{})
+		err := rows.Scan(&entryId, &hookId, &created, &meta)
+		if err != nil {
+			log.Error(fmt.Errorf("unable to process row: %v", err))
+		} else {
+			entry := GitHookEntry{ EntryId: entryId, HookId: hookId, CreatedAt: created, Meta: meta }
+			values = append(values, entry)
+		}
+	}
+	return values, nil
 }
 
-func deleteHookEntry(db *pgx.Conn, entryId uuid.UUID) {
-	log.Debug(fmt.Sprintf("deleting hook entry with ID %s", entryId))
+func deleteHookEntry(db *pgx.Conn, hookId uuid.UUID) error {
+	log.Debug(fmt.Sprintf("deleting Git Hook with ID %s", hookId))
+	_, err := db.Exec(context.Background(), "DELETE FROM git_hooks WHERE hook_id = $1", hookId)
+	if err != nil {
+		log.Error(fmt.Errorf("unable to delete repo entry %s: %v", hookId, err))
+		return err
+	}
+	return nil
 }

@@ -36,16 +36,16 @@ type GitEventHookResponse struct {
 // #########################################
 
 type GitRepoEntry struct {
-	EntryId     uuid.UUID
-	Uid 	    string
-	RepoUrl     string
-	AccessToken string
-	CreatedAt   time.Time
+	EntryId     uuid.UUID `json:"entryId"`
+	Uid 	    string    `json:"uid"`
+	RepoUrl     string    `json:"repoUrl"`
+	AccessToken string    `json:"accessToken"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 type GitHookEntry struct {
-	EntryId   uuid.UUID
-	HookId    uuid.UUID
-	CreatedAt time.Time
-	Meta      interface{}
+	EntryId   uuid.UUID   `json:"entryId"`
+	HookId    uuid.UUID   `json:"hookId"`
+	CreatedAt time.Time   `json:"createdAt"`
+	Meta      interface{} `json:"meta"`
 }
