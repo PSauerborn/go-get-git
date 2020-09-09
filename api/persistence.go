@@ -54,6 +54,18 @@ func getRepoEntry(db *pgx.Conn, entryId uuid.UUID) (GitRepoEntry, error) {
 	return GitRepoEntry{ EntryId: entryId, Uid: uid, RepoUrl: repoUrl, AccessToken: accessToken, CreatedAt: createdAt }, nil
 }
 
+func getRepoEntryByRepoUrl(db *pgx.Conn, url string) (GitRepoEntry, error) {
+	log.Debug(fmt.Sprintf("retrieving repo entry for url %s", url))
+	var (entryId uuid.UUID; uid, repoUrl, accessToken string; createdAt time.Time)
+	results := db.QueryRow(context.Background(), "SELECT entry_id,uid,repo_url,access_token,created_at FROM repo_entries WHERE repo_url=$1", url)
+	err := results.Scan(&entryId, &uid, &repoUrl, &accessToken, &createdAt)
+	if err != nil {
+		log.Error(fmt.Errorf("unable to fetch repo entries from database: %v", err))
+		return GitRepoEntry{}, err
+	}
+	return GitRepoEntry{ EntryId: entryId, Uid: uid, RepoUrl: repoUrl, AccessToken: accessToken, CreatedAt: createdAt }, nil
+}
+
 func getAllRepoEntries(db *pgx.Conn) ([]GitRepoEntry, error) {
 	log.Debug("retrieving all repo entries")
 	values := []GitRepoEntry{}

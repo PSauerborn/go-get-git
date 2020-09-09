@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/streadway/amqp"
+	"github.com/gin-gonic/gin"
+	"github.com/google/go-github/github"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -31,6 +33,18 @@ func generateGitEvent(push GitPushEvent) Event {
 		EventId: uuid.New(),
 		EventTimestamp: time.Now(),
 		EventPayload: push,
+	}
+}
+
+func processGitPushEvent(ctx *gin.Context, e *github.PushEvent) {
+	log.Info(fmt.Sprintf("received master push event for repo %s. sending message to worker", *e.Repo.URL))
+	entry, err := getRepoEntryByRepoUrl(Persistence.Persistence(ctx), *e.Repo.URL)
+	if err != nil {
+		log.Error(fmt.Errorf("unable to get repo entry: %v", err))
+	} else {
+		log.Info(fmt.Sprintf("retrieved Repo Entry %+v", entry))
+		event := generateGitEvent(GitPushEvent{ RepoUrl: entry.RepoUrl, Uid: entry.Uid, ApplicationDirectory: "" })
+		sendRabbitPayload(event)
 	}
 }
 

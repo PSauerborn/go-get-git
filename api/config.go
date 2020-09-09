@@ -38,7 +38,7 @@ func ConfigureService() {
 
 	ApplicationId, err := uuid.Parse(OverrideStringVariable("APPLICATION_ID", ""))
 	if err != nil {
-		log.Fatal(fmt.Errorf("invalid application ID %v", err))
+		log.Fatal(fmt.Errorf("invalid application ID: %v", err))
 	} else {
 		log.Info(fmt.Sprintf("starting application with ID %s", ApplicationId))
 	}

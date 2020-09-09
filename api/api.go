@@ -25,7 +25,7 @@ func main() {
 
 	// configure POST routes used for server
 	router.POST("/go-get-git/registry", Persistence.Middleware(), CreateRegistryEntry)
-	router.POST("/go-get-git/webhook", HandleGitWebHook)
+	router.POST("/go-get-git/webhook", Persistence.Middleware(), HandleGitWebHook)
 	// configure DELETE routes used for server
 	router.DELETE("/go-get-git/registry/:entryId", Persistence.Middleware(), RemoveRegistryEntry)
 
@@ -149,8 +149,7 @@ func HandleGitWebHook(ctx *gin.Context) {
 	switch e := event.(type) {
 	case *github.PushEvent:
 		if isMasterPushEvent(e) {
-			log.Info("received master push event. sending message to worker")
-
+			processGitPushEvent(ctx, e)
 		} else {
 			log.Info(fmt.Sprintf("received push event to non-master branch %s", *e.Ref))
 		}
