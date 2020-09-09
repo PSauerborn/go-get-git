@@ -150,6 +150,7 @@ func HandleGitWebHook(ctx *gin.Context) {
 	case *github.PushEvent:
 		if isMasterPushEvent(e) {
 			log.Info("received master push event. sending message to worker")
+
 		} else {
 			log.Info(fmt.Sprintf("received push event to non-master branch %s", *e.Ref))
 		}
