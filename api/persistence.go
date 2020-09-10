@@ -42,9 +42,11 @@ func createHookEntry(db *pgx.Conn, entryId uuid.UUID, config NewGitHookRequest) 
 	return hookId, nil
 }
 
+// database function used to retrieve repo entry with a given UUID
 func getRepoEntry(db *pgx.Conn, entryId uuid.UUID) (GitRepoEntry, error) {
 	log.Debug(fmt.Sprintf("retrieving repo entry with ID %s", entryId))
 	var (uid, repoUrl, accessToken string; createdAt time.Time)
+	// get results from database and scan into variables
 	results := db.QueryRow(context.Background(), "SELECT entry_id,uid,repo_url,access_token,created_at FROM repo_entries WHERE entry_id=$1", entryId)
 	err := results.Scan(&uid, &repoUrl, &accessToken, &createdAt)
 	if err != nil {
@@ -54,9 +56,11 @@ func getRepoEntry(db *pgx.Conn, entryId uuid.UUID) (GitRepoEntry, error) {
 	return GitRepoEntry{ EntryId: entryId, Uid: uid, RepoUrl: repoUrl, AccessToken: accessToken, CreatedAt: createdAt }, nil
 }
 
+// database function used to retrieve a repo entry given a particular repo URL
 func getRepoEntryByRepoUrl(db *pgx.Conn, url string) (GitRepoEntry, error) {
 	log.Debug(fmt.Sprintf("retrieving repo entry for url %s", url))
 	var (entryId uuid.UUID; uid, repoUrl, accessToken string; createdAt time.Time)
+	// get results from database and scan into variables
 	results := db.QueryRow(context.Background(), "SELECT entry_id,uid,repo_url,access_token,created_at FROM repo_entries WHERE repo_url=$1", url)
 	err := results.Scan(&entryId, &uid, &repoUrl, &accessToken, &createdAt)
 	if err != nil {
@@ -66,20 +70,25 @@ func getRepoEntryByRepoUrl(db *pgx.Conn, url string) (GitRepoEntry, error) {
 	return GitRepoEntry{ EntryId: entryId, Uid: uid, RepoUrl: repoUrl, AccessToken: accessToken, CreatedAt: createdAt }, nil
 }
 
+// database function used to retrieve all repo entries
 func getAllRepoEntries(db *pgx.Conn) ([]GitRepoEntry, error) {
 	log.Debug("retrieving all repo entries")
 	values := []GitRepoEntry{}
+	// get results from database and scan into variables
 	rows, err := db.Query(context.Background(), "SELECT entry_id,uid,repo_url,access_token,created_at FROM repo_entries")
 	if err != nil {
 		log.Error(fmt.Errorf("unable to retrieve repo entries: %v", err))
 		return values, err
 	}
+
+	// iterate over data results and format into GitRepoEntry{} structs
 	for rows.Next() {
 		var (entryId uuid.UUID; uid, repoUrl, accessToken string; createdAt time.Time)
 		err := rows.Scan(&entryId, &uid, &repoUrl, &accessToken, &createdAt)
 		if err != nil {
 			log.Error(fmt.Errorf("unable to process row: %v", err))
 		} else {
+			// generate struct and append fo results
 			entry := GitRepoEntry{ EntryId: entryId, Uid: uid, RepoUrl: repoUrl, AccessToken: accessToken, CreatedAt: createdAt }
 			values = append(values, entry)
 		}
@@ -87,20 +96,25 @@ func getAllRepoEntries(db *pgx.Conn) ([]GitRepoEntry, error) {
 	return values, nil
 }
 
+// database function used to get all the repo entries for a particular user ID
 func getUserRepoEntries(db *pgx.Conn, uid string) ([]GitRepoEntry, error) {
 	log.Debug(fmt.Sprintf("retrieving all repo entries for user %s", uid))
 	values := []GitRepoEntry{}
+	// get results from database and scan into variables
 	rows, err := db.Query(context.Background(), "SELECT entry_id,uid,repo_url,access_token,created_at FROM repo_entries WHERE uid=$1", uid)
 	if err != nil {
 		log.Error(fmt.Errorf("unable to retrieve repo entries: %v", err))
 		return values, err
 	}
+
+	// iterate over data results and format into GitRepoEntry{} structs
 	for rows.Next() {
 		var (entryId uuid.UUID; uid, repoUrl, accessToken string; createdAt time.Time)
 		err := rows.Scan(&entryId, &uid, &repoUrl, &accessToken, &createdAt)
 		if err != nil {
 			log.Error(fmt.Errorf("unable to process row: %v", err))
 		} else {
+			// generate struct and append fo results
 			entry := GitRepoEntry{ EntryId: entryId, Uid: uid, RepoUrl: repoUrl, AccessToken: accessToken, CreatedAt: createdAt }
 			values = append(values, entry)
 		}
@@ -108,6 +122,7 @@ func getUserRepoEntries(db *pgx.Conn, uid string) ([]GitRepoEntry, error) {
 	return values, nil
 }
 
+// datbase function used to delete a repo entry with given entry ID
 func deleteRepoEntry(db *pgx.Conn, entryId uuid.UUID) error {
 	log.Debug(fmt.Sprintf("deleting repo entry with ID %s", entryId))
 	_, err := db.Exec(context.Background(), "DELETE FROM repo_entries WHERE entry_id = $1", entryId)
@@ -118,9 +133,12 @@ func deleteRepoEntry(db *pgx.Conn, entryId uuid.UUID) error {
 	return nil
 }
 
+// database function used to retrieve a particular git hook with given Hook ID
 func getHookEntry(db *pgx.Conn, hookId uuid.UUID) (GitHookEntry, error) {
 	log.Debug(fmt.Sprintf("retrieving hook entry with ID %s", hookId))
+
 	var (entryId uuid.UUID; created time.Time; meta interface{})
+	// get hook from postgres server and read into variables
 	hook := db.QueryRow(context.Background(), "SELECT entry_id,created_at,meta FROM git_hooks WHERE hook_id = $1", hookId)
 	err := hook.Scan(&entryId, &created, &meta)
 	if err != nil {
@@ -130,20 +148,25 @@ func getHookEntry(db *pgx.Conn, hookId uuid.UUID) (GitHookEntry, error) {
 	return GitHookEntry{ EntryId: entryId, HookId: hookId, CreatedAt: created, Meta: meta }, nil
 }
 
+// database function used to retrieve all hook entires from the postgres server
 func getAllHookEntries(db *pgx.Conn) ([]GitHookEntry, error) {
 	log.Debug("retrieving all hook entries")
 	values := []GitHookEntry{}
+	// retrieve values from postgres server
 	rows, err := db.Query(context.Background(), "SELECT entry_id,hook_id,created_at,meta FROM git_hooks")
 	if err != nil {
 		log.Error(fmt.Errorf("unable to retrieve repo entries: %v", err))
 		return values, err
 	}
+
+	// iterate over results and generate GitHookEntry{} structs
 	for rows.Next() {
 		var (entryId, hookId uuid.UUID; created time.Time; meta interface{})
 		err := rows.Scan(&entryId, &hookId, &created, &meta)
 		if err != nil {
 			log.Error(fmt.Errorf("unable to process row: %v", err))
 		} else {
+			// format entry into entry struct
 			entry := GitHookEntry{ EntryId: entryId, HookId: hookId, CreatedAt: created, Meta: meta }
 			values = append(values, entry)
 		}
@@ -151,20 +174,25 @@ func getAllHookEntries(db *pgx.Conn) ([]GitHookEntry, error) {
 	return values, nil
 }
 
+// database function used to retrieve all hook entires from the postgres server with a given entry ID
 func getAllHookEntriesByEntryId(db *pgx.Conn, entryId uuid.UUID) ([]GitHookEntry, error) {
 	log.Debug("retrieving all hook entries")
 	values := []GitHookEntry{}
+	// retrieve values from postgres server
 	rows, err := db.Query(context.Background(), "SELECT entry_id,hook_id,created_at,meta FROM git_hooks WHERE entry_id = $1", entryId)
 	if err != nil {
 		log.Error(fmt.Errorf("unable to retrieve repo entries: %v", err))
 		return values, err
 	}
+
+	// iterate over results and generate GitHookEntry{} structs
 	for rows.Next() {
 		var (entryId, hookId uuid.UUID; created time.Time; meta interface{})
 		err := rows.Scan(&entryId, &hookId, &created, &meta)
 		if err != nil {
 			log.Error(fmt.Errorf("unable to process row: %v", err))
 		} else {
+			// format entry into entry struct
 			entry := GitHookEntry{ EntryId: entryId, HookId: hookId, CreatedAt: created, Meta: meta }
 			values = append(values, entry)
 		}
@@ -180,4 +208,19 @@ func deleteHookEntry(db *pgx.Conn, hookId uuid.UUID) error {
 		return err
 	}
 	return nil
+}
+
+// database function used to retrieve the application directory for a given entry ID
+func getEntryDirectory(db *pgx.Conn, entryId uuid.UUID) (string, error) {
+	log.Debug(fmt.Sprintf("retrieving application directory for entry %s", entryId))
+	var applicationDirectory string
+
+	// get results from database
+	results := db.QueryRow(context.Background(), "SELECT application_directory FROM application_directories WHERE entry_id = $1", entryId)
+	err := results.Scan(&applicationDirectory)
+	if err != nil {
+		log.Error(fmt.Errorf("unable to retrieve application directory: %s", err))
+		return "", err
+	}
+	return applicationDirectory, nil
 }

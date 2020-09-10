@@ -2,9 +2,6 @@ package main
 
 import (
 	"fmt"
-	"crypto/hmac"
-	"crypto/sha1"
-	"encoding/hex"
 	"errors"
 	"strings"
 	"bytes"
@@ -46,11 +43,12 @@ func createGitWebHook(owner, repo, token string) (NewGitHookRequest, error) {
 	client := &http.Client{}
 	log.Debug(fmt.Sprintf("creating new hook for user %s with repo %s", owner, repo))
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/hooks", owner, repo)
-	log.Debug(fmt.Sprintf("making request to %s", url))
 
+	// format request with headers and set basic auth with given token
 	request, err := http.NewRequest("POST", url, bytes.NewReader(requestBytes))
 	request.Header.Add("accept", "application/vnd.github.v3+json")
 	request.SetBasicAuth(owner, token)
+
 	// make request to Github API to create new git hook
 	resp, err := client.Do(request)
 	if err != nil {
@@ -58,6 +56,7 @@ func createGitWebHook(owner, repo, token string) (NewGitHookRequest, error) {
 		return requestBody, err
 	}
 	defer resp.Body.Close()
+
 	// parse request body if status is not 200 and return error
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -67,31 +66,7 @@ func createGitWebHook(owner, repo, token string) (NewGitHookRequest, error) {
 	return requestBody, nil
 }
 
-func signBody(secret, body []byte) []byte {
-	computed := hmac.New(sha1.New, secret)
-	computed.Write(body)
-	return []byte(computed.Sum(nil))
-}
-
-// function used to check signature set
-func isValidHookPayload(signature string, body []byte) bool {
-	if (!strings.HasPrefix(signature, "sha1=")) {
-		log.Error(fmt.Sprintf("received invalid hash format %s", signature))
-		return false
-	}
-	actualHash := make([]byte, 20)
-	hex.Decode(actualHash, []byte(signature[5:]))
-
-	if hmac.Equal(signBody([]byte(GitHookSecret), body), actualHash) {
-		log.Info("successfully validated git signature")
-		return true
-	} else {
-		log.Error("unable to verify git signature")
-		return false
-	}
-}
-
-// function used to check git checks
+// function used check if git events are pushes to master branch
 func isMasterPushEvent(e *github.PushEvent) bool {
 	if e.Ref != nil {
 		return strings.HasPrefix(*e.Ref, "refs/heads/") && strings.HasSuffix(*e.Ref, "/master")

@@ -11,21 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-
-type Event struct {
-	ApplicationId  uuid.UUID   `json:"application_id"`
-	ParentId	   uuid.UUID   `json:"parent_id"`
-	EventId		   uuid.UUID   `json:"event_id"`
-	EventTimestamp time.Time   `json:"event_timestamp"`
-	EventPayload   interface{} `json:"event_payload"`
-}
-
-type GitPushEvent struct {
-	RepoUrl	             string `json:"repo_url"`
-	Uid	                 string `json:"uid"`
-	ApplicationDirectory string `json:"application_directory"`
-}
-
+// helper function used to create new git Event
 func generateGitEvent(push GitPushEvent) Event {
 	return Event{
 		ApplicationId: ApplicationId,
@@ -39,13 +25,21 @@ func generateGitEvent(push GitPushEvent) Event {
 // function used to process git event by sending message over rabbitmq server
 func processGitPushEvent(ctx *gin.Context, e *github.PushEvent) {
 	log.Info(fmt.Sprintf("received master push event for repo %s. sending message to worker", *e.Repo.URL))
+	// get repo entry from database
 	entry, err := getRepoEntryByRepoUrl(Persistence.Persistence(ctx), *e.Repo.URL)
 	if err != nil {
 		log.Error(fmt.Errorf("unable to get repo entry: %v", err))
 	} else {
 		log.Info(fmt.Sprintf("retrieved Repo Entry %+v", entry))
-		event := generateGitEvent(GitPushEvent{ RepoUrl: entry.RepoUrl, Uid: entry.Uid, ApplicationDirectory: "" })
-		sendRabbitPayload(event)
+		// get file directory of application from database
+		dir, err := getEntryDirectory(Persistence.Persistence(ctx), entry.EntryId)
+		if err != nil {
+			log.Error(fmt.Errorf("unable to fetch application directory: %s", err))
+		} else {
+			// generate rabbitMQ event and send over rabbit server to daemon
+			event := generateGitEvent(GitPushEvent{ RepoUrl: entry.RepoUrl, Uid: entry.Uid, ApplicationDirectory: dir })
+			sendRabbitPayload(event)
+		}
 	}
 }
 

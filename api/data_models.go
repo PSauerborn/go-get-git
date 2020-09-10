@@ -49,3 +49,17 @@ type GitHookEntry struct {
 	CreatedAt time.Time   `json:"createdAt"`
 	Meta      interface{} `json:"meta"`
 }
+
+type Event struct {
+	ApplicationId  string      `json:"application_id"`
+	ParentId	   uuid.UUID   `json:"parent_id"`
+	EventId		   uuid.UUID   `json:"event_id"`
+	EventTimestamp time.Time   `json:"event_timestamp"`
+	EventPayload   interface{} `json:"event_payload"`
+}
+
+type GitPushEvent struct {
+	RepoUrl	             string `json:"repo_url"`
+	Uid	                 string `json:"uid"`
+	ApplicationDirectory string `json:"application_directory"`
+}

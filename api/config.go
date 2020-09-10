@@ -4,7 +4,6 @@ import (
 	"os"
 	"fmt"
 	"strconv"
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,7 +15,7 @@ var (
 	GitHookSecret string
 	GitHookUrl string
 	RabbitQueueUrl string
-	ApplicationId uuid.UUID
+	ApplicationId string
 )
 
 // Function used to configure service settings
@@ -36,12 +35,7 @@ func ConfigureService() {
 	GitHookUrl = OverrideStringVariable("GIT_HOOK_URL", "https://project-gateway.app/api/go-get-git/webhook")
 	RabbitQueueUrl = OverrideStringVariable("RABBIT_QUEUE_URL", "amqp://guest:guest@localhost:5672/")
 
-	ApplicationId, err := uuid.Parse(OverrideStringVariable("APPLICATION_ID", ""))
-	if err != nil {
-		log.Fatal(fmt.Errorf("invalid application ID: %v", err))
-	} else {
-		log.Info(fmt.Sprintf("starting application with ID %s", ApplicationId))
-	}
+	ApplicationId = OverrideStringVariable("APPLICATION_ID", "go-get-git")
 }
 
 // Function used to override configuration variables with some
