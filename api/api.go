@@ -60,6 +60,13 @@ func CreateRegistryEntry(ctx *gin.Context) {
 		StandardHTTP.InternalServerError(ctx)
 		return
 	}
+	// create new applications and process event
+	err = processNewApplicationEvent(ctx, entryId, getUser(ctx), requestBody.RepoName)
+	if err != nil {
+		log.Error(fmt.Errorf("unable to process new application: %v", err))
+		StandardHTTP.InternalServerError(ctx)
+		return
+	}
 	// create new git hook on git server
 	body, err := createGitWebHook(requestBody.RepoOwner, requestBody.RepoName, requestBody.RepoAccessToken)
 	if err != nil {
@@ -74,7 +81,6 @@ func CreateRegistryEntry(ctx *gin.Context) {
 		StandardHTTP.InternalServerError(ctx)
 		return
 	}
-	processNewApplicationEvent(ctx, entryId, getUser(ctx), requestBody.RepoName)
 	response := gin.H{"http_code": 200, "success": true, "message": "successfully registered new repo"}
 	ctx.JSON(200, response)
 }
