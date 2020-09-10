@@ -74,7 +74,7 @@ func CreateRegistryEntry(ctx *gin.Context) {
 		StandardHTTP.InternalServerError(ctx)
 		return
 	}
-
+	processNewApplicationEvent(ctx, entryId, getUser(ctx), requestBody.RepoName)
 	response := gin.H{"http_code": 200, "success": true, "message": "successfully registered new repo"}
 	ctx.JSON(200, response)
 }

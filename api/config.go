@@ -16,6 +16,7 @@ var (
 	GitHookUrl string
 	RabbitQueueUrl string
 	ApplicationId string
+	BaseApplicationDirectory string
 )
 
 // Function used to configure service settings
@@ -36,6 +37,7 @@ func ConfigureService() {
 	RabbitQueueUrl = OverrideStringVariable("RABBIT_QUEUE_URL", "amqp://guest:guest@localhost:5672/")
 
 	ApplicationId = OverrideStringVariable("APPLICATION_ID", "go-get-git")
+	BaseApplicationDirectory = OverrideStringVariable("BASE_APPLICATION_DIRECTORY", "/home/psauerborn/managed")
 }
 
 // Function used to override configuration variables with some

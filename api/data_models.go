@@ -63,3 +63,8 @@ type GitPushEvent struct {
 	Uid	                 string `json:"uid"`
 	ApplicationDirectory string `json:"application_directory"`
 }
+
+type NewGitRepoEvent struct {
+	Uid	                 string `json:"uid"`
+	ApplicationDirectory string `json:"application_directory"`
+}

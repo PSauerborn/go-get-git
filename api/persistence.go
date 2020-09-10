@@ -224,3 +224,14 @@ func getEntryDirectory(db *pgx.Conn, entryId uuid.UUID) (string, error) {
 	}
 	return applicationDirectory, nil
 }
+
+func createEntryDirectory(db *pgx.Conn, entryId uuid.UUID, applicationDirectory string) error {
+	log.Debug(fmt.Sprintf("creating new application directory %+v", applicationDirectory))
+	// insert entry into database
+	_, err := db.Exec(context.Background(), "INSERT INTO application_directories(entry_id,application_directory) VALUES($1,$2)", entryId, applicationDirectory)
+	if err != nil {
+		log.Error(fmt.Errorf("unable to insert values into application directories table table: %v", err))
+		return err
+	}
+	return nil
+}

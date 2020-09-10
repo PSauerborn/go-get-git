@@ -12,13 +12,13 @@ import (
 )
 
 // helper function used to create new git Event
-func generateGitEvent(push GitPushEvent) Event {
+func generateEvent(e interface{}) Event {
 	return Event{
 		ApplicationId: ApplicationId,
 		ParentId: uuid.New(),
 		EventId: uuid.New(),
 		EventTimestamp: time.Now(),
-		EventPayload: push,
+		EventPayload: e,
 	}
 }
 
@@ -37,9 +37,22 @@ func processGitPushEvent(ctx *gin.Context, e *github.PushEvent) {
 			log.Error(fmt.Errorf("unable to fetch application directory: %s", err))
 		} else {
 			// generate rabbitMQ event and send over rabbit server to daemon
-			event := generateGitEvent(GitPushEvent{ RepoUrl: entry.RepoUrl, Uid: entry.Uid, ApplicationDirectory: dir })
+			event := generateEvent(GitPushEvent{ RepoUrl: entry.RepoUrl, Uid: entry.Uid, ApplicationDirectory: dir })
 			sendRabbitPayload(event)
 		}
+	}
+}
+
+func processNewApplicationEvent(ctx *gin.Context, entryId uuid.UUID, user, application string) error {
+	err := createEntryDirectory(Persistence.Persistence(ctx), entryId, BaseApplicationDirectory + application)
+	if err != nil {
+		log.Error(fmt.Errorf("unable to create new application directory entry: %v", err))
+		return err
+	} else {
+		// generate rabbitMQ event and send over rabbit server to daemon
+		event := generateEvent(NewGitRepoEvent{ Uid: user, ApplicationDirectory: BaseApplicationDirectory + application })
+		sendRabbitPayload(event)
+		return nil
 	}
 }
 
