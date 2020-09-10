@@ -17,6 +17,7 @@ var (
 	RabbitQueueUrl string
 	ApplicationId string
 	BaseApplicationDirectory string
+	PostgresConnection string
 )
 
 // Function used to configure service settings
@@ -31,6 +32,8 @@ func ConfigureService() {
 	// configure listen address and port from environment variables
 	ListenAddress = OverrideStringVariable("LISTEN_ADDRESS", "0.0.0.0")
 	ListenPort = OverrideIntegerVariable("LISTEN_PORT", 10071)
+
+	PostgresConnection = OverrideStringVariable("POSTGRES_CONNECTION", "postgres://postgres:postgres-dev@localhost:5432/postgres")
 
 	GitHookSecret = OverrideStringVariable("GIT_HOOK_SECRET", "")
 	GitHookUrl = OverrideStringVariable("GIT_HOOK_URL", "https://project-gateway.app/api/go-get-git/webhook")

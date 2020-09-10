@@ -93,12 +93,15 @@ func GetRegistryEntry(ctx *gin.Context) {
 		StandardHTTP.InvalidRequest(ctx)
 		return
 	}
+	// get repo entry from database
 	entry, err := getRepoEntry(Persistence.Persistence(ctx), entryId)
 	if err != nil {
 		switch err {
+			// return 404 if no data entry exists
 		case pgx.ErrNoRows:
 			StandardHTTP.NotFound(ctx)
 			return
+			// by default, return internal server error
 		default:
 			StandardHTTP.InternalServerError(ctx)
 			return

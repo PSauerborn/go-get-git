@@ -10,10 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	PostgresConnection = OverrideStringVariable("POSTGRES_CONNECTION", "postgres://postgres:postgres-dev@localhost:5432/postgres")
-)
-
 // function used to create new repository entry in database
 func createRepoEntry(db *pgx.Conn, user string, body NewRegistryEntry) (uuid.UUID, error) {
 	log.Debug(fmt.Sprintf("creating new registry entry %+v", body))
