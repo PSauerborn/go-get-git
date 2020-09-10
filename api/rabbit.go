@@ -26,13 +26,13 @@ func generateEvent(e interface{}) Event {
 func processGitPushEvent(ctx *gin.Context, e *github.PushEvent) {
 	log.Info(fmt.Sprintf("received master push event for repo %s. sending message to worker", *e.Repo.URL))
 	// get repo entry from database
-	entry, err := getRepoEntryByRepoUrl(Persistence.Persistence(ctx), *e.Repo.URL)
+	entry, err := persistence.getRepoEntryByRepoUrl(*e.Repo.URL)
 	if err != nil {
 		log.Error(fmt.Errorf("unable to get repo entry: %v", err))
 	} else {
 		log.Info(fmt.Sprintf("retrieved Repo Entry %+v", entry))
 		// get file directory of application from database
-		dir, err := getEntryDirectory(Persistence.Persistence(ctx), entry.EntryId)
+		dir, err := persistence.getEntryDirectory(entry.EntryId)
 		if err != nil {
 			log.Error(fmt.Errorf("unable to fetch application directory: %s", err))
 		} else {
@@ -44,7 +44,7 @@ func processGitPushEvent(ctx *gin.Context, e *github.PushEvent) {
 }
 
 func processNewApplicationEvent(ctx *gin.Context, entryId uuid.UUID, user, application string) error {
-	err := createEntryDirectory(Persistence.Persistence(ctx), entryId, BaseApplicationDirectory + application)
+	err := persistence.createEntryDirectory(entryId, BaseApplicationDirectory + application)
 	if err != nil {
 		log.Error(fmt.Errorf("unable to create new application directory entry: %v", err))
 		return err

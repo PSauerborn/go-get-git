@@ -11,23 +11,25 @@ import (
 
 // function used to start new authentication service
 func main() {
-	// read environment variables from config into local variables
+	// read environment variables from config into local variables and connect persistence
 	ConfigureService()
+	ConnectPersistence()
+
 	router := gin.New()
 
 	// configure GET routes used for server
 	router.GET("/go-get-git/health", HealthCheck)
-	router.GET("/go-get-git/registry", Persistence.Middleware(), GetRegistryEntries)
-	router.GET("/go-get-git/registry/:entryId", Persistence.Middleware(), GetRegistryEntry)
-	router.GET("/go-get-git/hooks", Persistence.Middleware(), GetHookEntries)
-	router.GET("/go-get-git/hooks/:entryId", Persistence.Middleware(), GetHookEntriesById)
-	router.GET("/go-get-git/hook/:hookId", Persistence.Middleware(), GetHookEntry)
+	router.GET("/go-get-git/registry", GetRegistryEntries)
+	router.GET("/go-get-git/registry/:entryId", GetRegistryEntry)
+	router.GET("/go-get-git/hooks", GetHookEntries)
+	router.GET("/go-get-git/hooks/:entryId", GetHookEntriesById)
+	router.GET("/go-get-git/hook/:hookId", GetHookEntry)
 
 	// configure POST routes used for server
-	router.POST("/go-get-git/registry", Persistence.Middleware(), CreateRegistryEntry)
-	router.POST("/go-get-git/webhook", Persistence.Middleware(), HandleGitWebHook)
+	router.POST("/go-get-git/registry", CreateRegistryEntry)
+	router.POST("/go-get-git/webhook", HandleGitWebHook)
 	// configure DELETE routes used for server
-	router.DELETE("/go-get-git/registry/:entryId", Persistence.Middleware(), RemoveRegistryEntry)
+	router.DELETE("/go-get-git/registry/:entryId", RemoveRegistryEntry)
 
 	log.Info(fmt.Sprintf("starting go-get-git service at %s:%d", ListenAddress, ListenPort))
 	router.Run(fmt.Sprintf("%s:%d", ListenAddress, ListenPort))
@@ -54,7 +56,7 @@ func CreateRegistryEntry(ctx *gin.Context) {
 	}
 	log.Debug(fmt.Sprintf("processing request with body %+v", requestBody))
 	// create new repo entry in database
-	entryId, err := createRepoEntry(Persistence.Persistence(ctx), getUser(ctx), requestBody)
+	entryId, err := persistence.createRepoEntry(getUser(ctx), requestBody)
 	if err != nil {
 		log.Error(fmt.Sprintf("received invalid request body"))
 		StandardHTTP.InternalServerError(ctx)
@@ -75,7 +77,7 @@ func CreateRegistryEntry(ctx *gin.Context) {
 		return
 	}
 	// create new hook entry in database
-	_, err = createHookEntry(Persistence.Persistence(ctx), entryId, body)
+	_, err = persistence.createHookEntry(entryId, body)
 	if err != nil {
 		log.Error(fmt.Sprintf("received invalid request body"))
 		StandardHTTP.InternalServerError(ctx)
@@ -94,7 +96,7 @@ func GetRegistryEntry(ctx *gin.Context) {
 		return
 	}
 	// get repo entry from database
-	entry, err := getRepoEntry(Persistence.Persistence(ctx), entryId)
+	entry, err := persistence.getRepoEntry(entryId)
 	if err != nil {
 		switch err {
 			// return 404 if no data entry exists
@@ -114,7 +116,7 @@ func GetRegistryEntry(ctx *gin.Context) {
 func GetRegistryEntries(ctx *gin.Context) {
 	log.Debug(fmt.Sprintf("received request for registry entries from user %s", getUser(ctx)))
 	// retrieve repo entries from database
-	entries, err := getAllRepoEntries(Persistence.Persistence(ctx))
+	entries, err := persistence.getAllRepoEntries()
 	if err != nil {
 		switch err {
 		case pgx.ErrNoRows:
@@ -179,7 +181,7 @@ func GetHookEntry(ctx *gin.Context) {
 	}
 	log.Debug(fmt.Sprintf("received request for hook with hook ID %s", hookId))
 	// get hook entry from database. note that 404 if found if entry doesnt exist
-	entry, err := getHookEntry(Persistence.Persistence(ctx), hookId)
+	entry, err := persistence.getHookEntry(hookId)
 	if err != nil {
 		switch err {
 		case pgx.ErrNoRows:
@@ -197,7 +199,7 @@ func GetHookEntry(ctx *gin.Context) {
 func GetHookEntries(ctx *gin.Context) {
 	log.Debug(fmt.Sprintf("received request to fetch all hook entries from user %s", getUser(ctx)))
 	// retrieve list of hook entries from database and return
-	entries, err := getAllHookEntries(Persistence.Persistence(ctx))
+	entries, err := persistence.getAllHookEntries()
 	if err != nil {
 		switch err {
 		case pgx.ErrNoRows:
@@ -222,7 +224,7 @@ func GetHookEntriesById(ctx *gin.Context) {
 	}
 
 	log.Debug(fmt.Sprintf("received request for hook entries for entry ID %s", entryId))
-	entries, err := getAllHookEntriesByEntryId(Persistence.Persistence(ctx), entryId)
+	entries, err := persistence.getAllHookEntriesByEntryId(entryId)
 	if err != nil {
 		switch err {
 		case pgx.ErrNoRows:
