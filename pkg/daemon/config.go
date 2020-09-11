@@ -1,4 +1,4 @@
-package main
+package daemon
 
 import (
 	"os"
@@ -9,6 +9,9 @@ import (
 
 var (
 	LogLevels = map[string]log.Level{ "DEBUG": log.DebugLevel, "INFO": log.InfoLevel, "WARN": log.WarnLevel }
+	RabbitQueueUrl string
+	QueueName string
+	EventExchangeName string
 )
 
 // Function used to configure service settings
@@ -20,6 +23,10 @@ func ConfigureService() {
 	} else {
 		log.Fatal(fmt.Sprintf("received invalid log level %s", LogLevelString))
 	}
+
+	RabbitQueueUrl = OverrideStringVariable("RABBIT_QUEUE_URL", "amqp://guest:guest@localhost:5672/")
+	QueueName = OverrideStringVariable("QUEUE_NAME", "testing-queue")
+	EventExchangeName = OverrideStringVariable("EVENT_EXCHANGE_NAME", "events")
 }
 
 // Function used to override configuration variables with some

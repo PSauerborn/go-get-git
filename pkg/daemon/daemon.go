@@ -1,4 +1,4 @@
-package main
+package daemon
 
 import (
 	log "github.com/sirupsen/logrus"
@@ -9,10 +9,10 @@ var (
 	logLevels = map[string]log.Level {"DEBUG": log.DebugLevel, "INFO": log.InfoLevel, "WARN": log.WarnLevel }
 )
 
-func main() {
+func New() *GoGetGitDaemon {
 	ConfigureService()
 
 	// create new instance of daemon and run
 	daemon := New()
-	daemon.Run()
+	return daemon
 }

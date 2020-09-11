@@ -1,23 +1,15 @@
 FROM golang:latest as build
 
-ENV GO111MODULE=on
-
 WORKDIR /app/server
 
-COPY ./go.mod .
-COPY ./go.sum .
-
-RUN go mod download
-
-COPY . .
-
-RUN CGO_ENABLED=0 go build
+COPY ./api.go ./
+RUN go build ./api.go
 
 FROM alpine:latest as server
 
 WORKDIR /app/server
 
-COPY --from=build /app/server/api ./
+COPY --from=build /app/server ./
 
 RUN chmod +x ./api
 

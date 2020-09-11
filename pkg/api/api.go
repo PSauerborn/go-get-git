@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 )
 
 // function used to start new authentication service
-func main() {
+func New() *gin.Engine {
 	// read environment variables from config into local variables and connect persistence
 	ConfigureService()
 	ConnectPersistence()
@@ -31,8 +31,7 @@ func main() {
 	// configure DELETE routes used for server
 	router.DELETE("/go-get-git/registry/:entryId", RemoveRegistryEntry)
 
-	log.Info(fmt.Sprintf("starting go-get-git service at %s:%d", ListenAddress, ListenPort))
-	router.Run(fmt.Sprintf("%s:%d", ListenAddress, ListenPort))
+	return router
 }
 
 func getUser(ctx *gin.Context) string {
