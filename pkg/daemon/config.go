@@ -12,6 +12,7 @@ var (
 	RabbitQueueUrl string
 	QueueName string
 	EventExchangeName string
+	ExchangeType string
 )
 
 // Function used to configure service settings
@@ -24,9 +25,10 @@ func ConfigureService() {
 		log.Fatal(fmt.Sprintf("received invalid log level %s", LogLevelString))
 	}
 
-	RabbitQueueUrl = OverrideStringVariable("RABBIT_QUEUE_URL", "amqp://guest:guest@localhost:5672/")
+	RabbitQueueUrl = OverrideStringVariable("RABBIT_QUEUE_URL", "amqp://guest:guest@192.168.99.100:5672/")
 	QueueName = OverrideStringVariable("QUEUE_NAME", "testing-queue")
 	EventExchangeName = OverrideStringVariable("EVENT_EXCHANGE_NAME", "events")
+	ExchangeType = OverrideStringVariable("EVENT_EXCHANGE_TYPE", "fanout")
 }
 
 // Function used to override configuration variables with some

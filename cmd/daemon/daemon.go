@@ -5,6 +5,7 @@ import (
 )
 
 func main() {
-	daemon := New()
-	daemon.Run()
+
+	service := daemon.New()
+	service.Run()
 }

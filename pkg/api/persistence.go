@@ -25,7 +25,7 @@ func ConnectPersistence() {
 	}
 	log.Info("successfully connected to postgres")
 	// connect persistence and assign to persistence var
-	persistence = &Persistence{ db }
+	persistence = &Persistence{db}
 }
 
 // function used to create new repository entry in database

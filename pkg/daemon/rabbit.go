@@ -41,10 +41,21 @@ func sendRabbitPayload(event events.Event) error {
 	return nil
 }
 
-func RabbitListener(handler func(payload []byte)) error {
+type RabbitMQConfig struct {
+	RabbitQueueUrl string
+	ExchangeName   string
+	QueueName      string
+	ExchangeType   string
+}
+
+func (config RabbitMQConfig) FromEnvironment() *RabbitMQConfig {
+	return &RabbitMQConfig{RabbitQueueUrl: RabbitQueueUrl, ExchangeName: EventExchangeName, QueueName: QueueName, ExchangeType: ExchangeType}
+}
+
+func ListenOnQueue(config *RabbitMQConfig, handler func(payload []byte)) error {
 	log.Info(fmt.Sprintf("connecting to rabbitmq server at %s", RabbitQueueUrl))
 	// connect to rabbitmq server using queue url
-	conn, err := amqp.Dial(RabbitQueueUrl)
+	conn, err := amqp.Dial(config.RabbitQueueUrl)
 	if err != nil {
 		log.Error(fmt.Errorf("unable to connect to rabbitmq server: %s", err))
 		return err
@@ -57,14 +68,20 @@ func RabbitListener(handler func(payload []byte)) error {
 		log.Error(fmt.Errorf("unable to create rabbitmq channel: %s", err))
 		return err
 	}
+	// declare events exchange with fanout type
+	err = channel.ExchangeDeclare(config.ExchangeName, config.ExchangeType, false, true, false, false, nil)
+	if err != nil {
+		log.Error(fmt.Errorf("unable to create rabbitmq exchange: %s", err))
+		return err
+	}
 	// declare queue
-	queue, err := channel.QueueDeclare(QueueName, false, false, true, false, nil)
+	queue, err := channel.QueueDeclare(config.QueueName, false, false, true, false, nil)
 	if err != nil {
 		log.Error(fmt.Errorf("unable to create rabbit queue: %v", err))
 		return err
 	}
 	// bind queue to exchange
-	err = channel.QueueBind(queue.Name, "", EventExchangeName, false, nil)
+	err = channel.QueueBind(queue.Name, "", config.ExchangeName, false, nil)
 	if err != nil {
 		log.Error(fmt.Errorf("unable to bind to exchange: %v", err))
 		return err

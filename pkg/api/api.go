@@ -9,42 +9,54 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// function used to start new authentication service
-func New() *gin.Engine {
-	// read environment variables from config into local variables and connect persistence
-	ConfigureService()
-	ConnectPersistence()
 
+// function used to start new authentication service
+func New() *GoGetGitAPI {
+	// read environment variables from config into local variables and connect persistence
 	router := gin.New()
+	service := GoGetGitAPI{router}
 
 	// configure GET routes used for server
-	router.GET("/go-get-git/health", HealthCheck)
-	router.GET("/go-get-git/registry", GetRegistryEntries)
-	router.GET("/go-get-git/registry/:entryId", GetRegistryEntry)
-	router.GET("/go-get-git/hooks", GetHookEntries)
-	router.GET("/go-get-git/hooks/:entryId", GetHookEntriesById)
-	router.GET("/go-get-git/hook/:hookId", GetHookEntry)
-
+	service.router.GET("/go-get-git/health", service.HealthCheck)
+	service.router.GET("/go-get-git/registry", service.GetRegistryEntries)
+	service.router.GET("/go-get-git/registry/:entryId", service.GetRegistryEntry)
+	service.router.GET("/go-get-git/hooks", service.GetHookEntries)
+	service.router.GET("/go-get-git/hooks/:entryId", service.GetHookEntriesById)
+	service.router.GET("/go-get-git/hook/:hookId", service.GetHookEntry)
 	// configure POST routes used for server
-	router.POST("/go-get-git/registry", CreateRegistryEntry)
-	router.POST("/go-get-git/webhook", HandleGitWebHook)
+	service.router.POST("/go-get-git/registry", service.CreateRegistryEntry)
+	service.router.POST("/go-get-git/webhook", service.HandleGitWebHook)
 	// configure DELETE routes used for server
-	router.DELETE("/go-get-git/registry/:entryId", RemoveRegistryEntry)
+	service.router.DELETE("/go-get-git/registry/:entryId", service.RemoveRegistryEntry)
 
-	return router
+	return &service
 }
 
 func getUser(ctx *gin.Context) string {
 	return ctx.Request.Header.Get("X-Authenticated-Userid")
 }
 
+type GoGetGitAPI struct {
+	router *gin.Engine
+}
+
+func(api GoGetGitAPI) Run() {
+	// configure environment variables and connect persistence
+	ConfigureService()
+	ConnectPersistence()
+
+	connection := fmt.Sprintf("%s:%d", ListenAddress, ListenPort)
+	log.Info(fmt.Sprintf("starting new go-get-git service at %s", connection))
+	api.router.Run(connection)
+}
+
 // function used as basic health check
-func HealthCheck(ctx *gin.Context) {
+func(api GoGetGitAPI) HealthCheck(ctx *gin.Context) {
 	StandardHTTP.Success(ctx)
 }
 
 // API Handler used to create new registry entries
-func CreateRegistryEntry(ctx *gin.Context) {
+func(api GoGetGitAPI) CreateRegistryEntry(ctx *gin.Context) {
 	log.Debug(fmt.Sprintf("received request to create registry entry for user %s", getUser(ctx)))
 	var requestBody NewRegistryEntry
 	err := ctx.ShouldBind(&requestBody)
@@ -87,7 +99,7 @@ func CreateRegistryEntry(ctx *gin.Context) {
 }
 
 // API Handler used to get specific registry entry
-func GetRegistryEntry(ctx *gin.Context) {
+func(api GoGetGitAPI) GetRegistryEntry(ctx *gin.Context) {
 	entryId, err := uuid.Parse(ctx.Param("entryId"))
 	if err != nil {
 		log.Error(fmt.Sprintf("received invalid uuid %s", ctx.Param("entryId")))
@@ -112,7 +124,7 @@ func GetRegistryEntry(ctx *gin.Context) {
 }
 
 // API Hander used to get user registry entries
-func GetRegistryEntries(ctx *gin.Context) {
+func(api GoGetGitAPI) GetRegistryEntries(ctx *gin.Context) {
 	log.Debug(fmt.Sprintf("received request for registry entries from user %s", getUser(ctx)))
 	// retrieve repo entries from database
 	entries, err := persistence.getAllRepoEntries()
@@ -130,14 +142,14 @@ func GetRegistryEntries(ctx *gin.Context) {
 }
 
 // API Handler used to remove registry entry
-func RemoveRegistryEntry(ctx *gin.Context) {
+func(api GoGetGitAPI) RemoveRegistryEntry(ctx *gin.Context) {
 	StandardHTTP.FeatureNotSupported(ctx)
 }
 
 // API route used to handle git hooks. Note that only Git Hooks
 // that contain pushes to the master repositrory are handled and
 // sent over the message bus
-func HandleGitWebHook(ctx *gin.Context) {
+func(api GoGetGitAPI) HandleGitWebHook(ctx *gin.Context) {
 	log.Info("received new git hook trigger")
 	// validate git hook request
 	payload, err := github.ValidatePayload(ctx.Request, []byte(GitHookSecret))
@@ -170,7 +182,7 @@ func HandleGitWebHook(ctx *gin.Context) {
 }
 
 // API Route used to retrieve a particular hook entry by Hook ID
-func GetHookEntry(ctx *gin.Context) {
+func(api GoGetGitAPI) GetHookEntry(ctx *gin.Context) {
 	// parse hook ID into UUID format and return 400 if invalid
 	hookId, err := uuid.Parse(ctx.Param("hookId"))
 	if err != nil {
@@ -195,7 +207,7 @@ func GetHookEntry(ctx *gin.Context) {
 }
 
 // API Route used to retrieve all hook entries currently stored in database
-func GetHookEntries(ctx *gin.Context) {
+func(api GoGetGitAPI) GetHookEntries(ctx *gin.Context) {
 	log.Debug(fmt.Sprintf("received request to fetch all hook entries from user %s", getUser(ctx)))
 	// retrieve list of hook entries from database and return
 	entries, err := persistence.getAllHookEntries()
@@ -214,7 +226,7 @@ func GetHookEntries(ctx *gin.Context) {
 
 // API route used to retrieve all git hook entries that belong
 // to a particular parent ID
-func GetHookEntriesById(ctx *gin.Context) {
+func(api GoGetGitAPI) GetHookEntriesById(ctx *gin.Context) {
 	entryId, err := uuid.Parse(ctx.Param("entryId"))
 	if err != nil {
 		log.Error(fmt.Sprintf("received invalid uuid %s", ctx.Param("entryId")))
