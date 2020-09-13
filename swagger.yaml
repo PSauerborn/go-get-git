@@ -1,0 +1,12 @@
+openapi: 3.0.0
+info:
+  title: Go-Get-Git API Service
+  description: Service used to manage Go-Get-Git applications
+  version: 0.0.1
+
+servers:
+  - url: https://project-gateway.app/go-get-git
+    description: Development Authorization Server
+
+security:
+  - BearerAuth: []
