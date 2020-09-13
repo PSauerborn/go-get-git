@@ -27,7 +27,7 @@ func processGitPushEvent(ctx *gin.Context, e *github.PushEvent) {
 			log.Error(fmt.Errorf("unable to fetch application directory: %s", err))
 		} else {
 			// generate rabbitMQ event and send over rabbit server to daemon
-			payload := events.GitPushEvent{RepoUrl: *e.Repo.URL, Uid: "", ApplicationDirectory: dir}
+			payload := events.GitPushEvent{RepoUrl: *e.Repo.URL, ApplicationDirectory: dir}
 			event := events.New("GitPushEvent", ApplicationId, uuid.New(), payload)
 			sendRabbitPayload(event)
 		}
@@ -41,7 +41,7 @@ func processNewApplicationEvent(ctx *gin.Context, entryId uuid.UUID, user, appli
 		return err
 	} else {
 		// generate rabbitMQ event and send over rabbit server to daemon
-		payload := events.NewGitRepoEvent{Uid: user, RepoUrl: url, ApplicationDirectory: BaseApplicationDirectory + application}
+		payload := events.NewGitRepoEvent{RepoUrl: url, ApplicationDirectory: BaseApplicationDirectory + application}
 		event := events.New("NewGitRepoEvent", ApplicationId, uuid.New(), payload)
 		sendRabbitPayload(event)
 		return nil

@@ -33,12 +33,10 @@ type Event struct {
 
 type GitPushEvent struct {
 	RepoUrl	             string `json:"repo_url" validate:"required"`
-	Uid	                 string `json:"uid" validate:"required"`
 	ApplicationDirectory string `json:"application_directory" validate:"required"`
 }
 
 type NewGitRepoEvent struct {
-	Uid	                 string `json:"uid" validate:"required"`
 	RepoUrl 			 string	`json:"repo_url" validate:"required"`
 	ApplicationDirectory string `json:"application_directory" validate:"required"`
 }

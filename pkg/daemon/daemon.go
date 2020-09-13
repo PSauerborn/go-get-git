@@ -33,9 +33,24 @@ func (daemon GoGetGitDaemon) ProcessRabbitMessage(payload []byte) {
 	if err != nil {
 		log.Error(fmt.Errorf("unable to parse event: %s", err))
 	} else {
+
+		// handle incoming event based on event type
 		switch e := event.EventPayload.(type) {
+			// handle event triggered when new master push is triggered on git repo
 		case events.GitPushEvent:
-			log.Debug(fmt.Sprintf("processing new GitPushEvent %v", e))
+			log.Debug(fmt.Sprintf("processing new GitPushEvent %+v", e))
+			err := handleGitPushEvent(e)
+			if err != nil {
+				log.Error(fmt.Errorf("unable to process eventL %v", err))
+			}
+			// handle event triggered when new application is registered
+		case events.NewGitRepoEvent:
+			log.Debug(fmt.Sprintf("processing new Git Application event %+v", e))
+			err := handleNewApplicationEvent(e)
+			if err != nil {
+				log.Error(fmt.Errorf("unable to process eventL %v", err))
+			}
+			// handle default case
 		default:
 			log.Debug(fmt.Sprintf("received event type '%+v'", e))
 		}
