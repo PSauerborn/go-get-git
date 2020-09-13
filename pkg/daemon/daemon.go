@@ -3,25 +3,30 @@ package daemon
 import (
 	"fmt"
 	"github.com/PSauerborn/go-get-git/pkg/events"
+	rabbit "github.com/PSauerborn/go-jackrabbit"
 	log "github.com/sirupsen/logrus"
 )
 
 // define struct used to control daemon
-type GoGetGitDaemon struct {
-	RabbitConfig *RabbitMQConfig
-}
+type GoGetGitDaemon struct {}
 
 // function used to create go-get-git daemon
 func (daemon GoGetGitDaemon) Run() {
 	log.Info("starting new instance of GoGetGit Daemon")
+	config := rabbit.RabbitConnectionConfig{
+		QueueURL: RabbitQueueUrl,
+		QueueName: QueueName,
+		ExchangeName: EventExchangeName,
+		ExchangeType: ExchangeType,
+	}
 	// start listening on rabbitMQ queue for events
-	err := ListenOnQueue(daemon.RabbitConfig, daemon.ProcessRabbitMessage)
+	err := rabbit.ListenOnQueueWithExchange(config, daemon.ProcessRabbitMessage)
 	if err != nil {
 		log.Fatal(fmt.Errorf("unable to create rabbitmq listener: %v", err))
 	}
 }
 
-// rabbitMQ listener function
+// function used to define how rabbitMQ messages are handled
 func (daemon GoGetGitDaemon) ProcessRabbitMessage(payload []byte) {
 	log.Info(fmt.Sprintf("received rabbitmq message %v", string(payload)))
 	event, err := events.ParseEvent(payload)
@@ -40,7 +45,6 @@ func (daemon GoGetGitDaemon) ProcessRabbitMessage(payload []byte) {
 // function used to create new daemon
 func New() *GoGetGitDaemon {
 	ConfigureService()
-	config := RabbitMQConfig{}.FromEnvironment()
-	return &GoGetGitDaemon{config}
+	return &GoGetGitDaemon{}
 }
 
