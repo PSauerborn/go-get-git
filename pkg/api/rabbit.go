@@ -2,25 +2,15 @@ package api
 
 import (
 	"fmt"
-	"time"
 	"encoding/json"
+	"github.com/PSauerborn/go-get-git/pkg/events"
 	"github.com/google/uuid"
-	"github.com/streadway/amqp"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/github"
 	log "github.com/sirupsen/logrus"
+	rabbit "github.com/PSauerborn/go-jackrabbit"
 )
 
-// helper function used to create new git Event
-func generateEvent(e interface{}) Event {
-	return Event{
-		ApplicationId: ApplicationId,
-		ParentId: uuid.New(),
-		EventId: uuid.New(),
-		EventTimestamp: time.Now(),
-		EventPayload: e,
-	}
-}
 
 // function used to process git event by sending message over rabbitmq server
 func processGitPushEvent(ctx *gin.Context, e *github.PushEvent) {
@@ -37,56 +27,38 @@ func processGitPushEvent(ctx *gin.Context, e *github.PushEvent) {
 			log.Error(fmt.Errorf("unable to fetch application directory: %s", err))
 		} else {
 			// generate rabbitMQ event and send over rabbit server to daemon
-			event := generateEvent(GitPushEvent{ RepoUrl: entry.RepoUrl, Uid: entry.Uid, ApplicationDirectory: dir })
+			payload := events.GitPushEvent{RepoUrl: *e.Repo.URL, Uid: "", ApplicationDirectory: dir}
+			event := events.New("GitPushEvent", ApplicationId, uuid.New(), payload)
 			sendRabbitPayload(event)
 		}
 	}
 }
 
-func processNewApplicationEvent(ctx *gin.Context, entryId uuid.UUID, user, application string) error {
+func processNewApplicationEvent(ctx *gin.Context, entryId uuid.UUID, user, application, url string) error {
 	err := persistence.createEntryDirectory(entryId, BaseApplicationDirectory + application)
 	if err != nil {
 		log.Error(fmt.Errorf("unable to create new application directory entry: %v", err))
 		return err
 	} else {
 		// generate rabbitMQ event and send over rabbit server to daemon
-		event := generateEvent(NewGitRepoEvent{ Uid: user, ApplicationDirectory: BaseApplicationDirectory + application })
+		payload := events.NewGitRepoEvent{Uid: user, RepoUrl: url, ApplicationDirectory: BaseApplicationDirectory + application}
+		event := events.New("NewGitRepoEvent", ApplicationId, uuid.New(), payload)
 		sendRabbitPayload(event)
 		return nil
 	}
 }
 
 // define function used to send message over rabbitmq server
-func sendRabbitPayload(event Event) error {
-	conn, err := amqp.Dial(RabbitQueueUrl)
-	if err != nil {
-		log.Error(fmt.Errorf("unable to connect to rabbitmq server: %s", err))
-		return err
-	}
-	defer conn.Close()
+func sendRabbitPayload(event events.Event) error {
 
-	// create channel on rabbitmq server
-	channel, err := conn.Channel()
-	if err != nil {
-		log.Error(fmt.Errorf("unable to create rabbitmq channel: %s", err))
-		return err
-	}
-	// declare events exchange with fanout type
-	err = channel.ExchangeDeclare("events", "fanout", false, true, false, false, nil)
-	if err != nil {
-		log.Error(fmt.Errorf("unable to create rabbitmq exchange: %s", err))
-		return err
+	RabbitConfig := rabbit.RabbitConnectionConfig{
+		QueueURL: RabbitQueueUrl,
+		ExchangeName: "events",
+		ExchangeType: "fanout",
 	}
 	// construct payload and send over rabbit server
 	body, _ := json.Marshal(&event)
-	payload := amqp.Publishing{ ContentType: "application/json", Body: []byte(body) }
-	err = channel.Publish("events", "", false, false, payload)
-	if err != nil {
-		log.Error(fmt.Errorf("unable to send payload over rabbitmq server: %s", err))
-		return err
-	}
-	log.Info(fmt.Sprintf("successfully sent payload %+v over rabbitMQ exchange", event))
-	return nil
+	return rabbit.ConnectAndDeliverOverExchange(RabbitConfig, body)
 }
 
 

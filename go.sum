@@ -1,6 +1,8 @@
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/PSauerborn/go-get-git/api v0.0.0-20200910114729-3f3e3028cf45 h1:kMm9pBCOcL/CVHgMz/1QqBAPxvDytl9OVQAcSZH2UKU=
 github.com/PSauerborn/go-get-git/api v0.0.0-20200910114729-3f3e3028cf45/go.mod h1:WNbR8FVY6RFE+ki+g8GNvezUvfRXUl+4rIFRGwbUDWs=
+github.com/PSauerborn/go-jackrabbit v0.0.0-20200913150453-e06427e1d566 h1:L5AB1FgpiOfod1/bpIa8jmyA1jmpVv+aW3QcimsPSdo=
+github.com/PSauerborn/go-jackrabbit v0.0.0-20200913150453-e06427e1d566/go.mod h1:zo0knAF9SMoQOow9vMKhWthKzQ2jGHAK4A/pQQs0yao=
 github.com/cockroachdb/apd v1.1.0/go.mod h1:8Sl8LxpKi29FqWXR16WEFZRNSz3SoPzUzeMeY4+DwBQ=
 github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
 github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=

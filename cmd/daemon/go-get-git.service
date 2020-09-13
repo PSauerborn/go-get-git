@@ -1,0 +1,34 @@
+[Unit]
+Description=go-get-git daemon used to monitor githooks for changes
+ConditionPathExists=/home/psauerborn/go-get-git/cmd/daemon
+After=network.target
+
+[Service]
+Type=simple
+User=go-get-git
+Group=go-get-git
+LimitNOFILE=1024
+
+Environment="GO_GET_GIT_RABBIT_QUEUE_URL=<ENTER_RABBIT_QUEUE_CONNECTION_HERE>"
+Environment="GO_GET_GIT_QUEUE_NAME=go-get-git-daemon-events"
+Environment="GO_GET_GIT_EVENT_EXCHANGE_NAME=events"
+Environment="GO_GET_GIT_EXCHANGE_TYPE=fanout"
+
+Restart=on-failure
+RestartSec=10
+startLimitIntervalSec=60
+
+WorkingDirectory=/home/psauerborn/go-get-git/cmd/daemon
+ExecStart=/home/psauerborn/go-get-git/cmd/daemon/daemon
+
+# make sure log directory exists and owned by syslog
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /var/log/go-get-git
+ExecStartPre=/bin/chown syslog:adm /var/log/go-get-git
+ExecStartPre=/bin/chmod 755 /var/log/go-get-git
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=go-get-git
+
+[Install]
+WantedBy=multi-user.target

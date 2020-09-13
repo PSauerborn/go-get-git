@@ -74,7 +74,7 @@ func(api GoGetGitAPI) CreateRegistryEntry(ctx *gin.Context) {
 		return
 	}
 	// create new applications and process event
-	err = processNewApplicationEvent(ctx, entryId, getUser(ctx), requestBody.RepoName)
+	err = processNewApplicationEvent(ctx, entryId, getUser(ctx), requestBody.RepoName, requestBody.RepoUrl)
 	if err != nil {
 		log.Error(fmt.Errorf("unable to process new application: %v", err))
 		StandardHTTP.InternalServerError(ctx)

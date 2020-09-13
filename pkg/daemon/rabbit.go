@@ -93,7 +93,7 @@ func ListenOnQueue(config *RabbitMQConfig, handler func(payload []byte)) error {
 		return err
 	}
 	// start goroutine to handle messages
-	forever :=make(chan bool)
+	forever := make(chan bool)
 	go func() { for d := range messages { handler(d.Body) }}()
 	<-forever
 

@@ -37,6 +37,12 @@ type GitPushEvent struct {
 	ApplicationDirectory string `json:"application_directory" validate:"required"`
 }
 
+type NewGitRepoEvent struct {
+	Uid	                 string `json:"uid" validate:"required"`
+	RepoUrl 			 string	`json:"repo_url" validate:"required"`
+	ApplicationDirectory string `json:"application_directory" validate:"required"`
+}
+
 type BuildTriggeredEvent struct {
 	EntryId uuid.UUID `json:"entry_id" validate:"required"`
 	RepoUrl string	  `json:"repo_url" validate:"required"`
@@ -91,6 +97,8 @@ func(parser DefaultParser) ParseEvent(payload []byte) (*Event, error) {
 	eventPayload, _ := json.Marshal(e.EventPayload)
 
 	switch e.EventType {
+	case "NewGitRepoEvent":
+		event, err= parser.ParseNewGitRepoEvent(eventPayload)
 	case "GitPushEvent":
 		event, err = parser.ParseGitPushEvent(eventPayload)
 	case "BuildTriggeredEvent":
@@ -100,9 +108,9 @@ func(parser DefaultParser) ParseEvent(payload []byte) (*Event, error) {
 	case "BuildCompletedEvent":
 		event, err = parser.ParseBuildCompletedEvent(eventPayload)
 	case "ContainerCrashedEvent":
-		event, err = parser.ContainerCrashedEvent(eventPayload)
+		event, err = parser.ParseContainerCrashedEvent(eventPayload)
 	case "ContainerRestartEvent":
-		event, err = parser.ContainerRestartEvent(eventPayload)
+		event, err = parser.ParseContainerRestartEvent(eventPayload)
 	default:
 		event, err = nil, InvalidEventError
 	}
@@ -142,14 +150,20 @@ func(parser DefaultParser) ParseBuildCompletedEvent(eventPayload []byte) (BuildC
 	return event, err
 }
 
-func(parser DefaultParser) ContainerCrashedEvent(eventPayload []byte) (ContainerCrashedEvent, error) {
+func(parser DefaultParser) ParseContainerCrashedEvent(eventPayload []byte) (ContainerCrashedEvent, error) {
 	var event ContainerCrashedEvent
 	err := json.Unmarshal(eventPayload, &event)
 	return event, err
 }
 
-func(parser DefaultParser) ContainerRestartEvent(eventPayload []byte) (ContainerRestartEvent, error) {
+func(parser DefaultParser) ParseContainerRestartEvent(eventPayload []byte) (ContainerRestartEvent, error) {
 	var event ContainerRestartEvent
+	err := json.Unmarshal(eventPayload, &event)
+	return event, err
+}
+
+func(parser DefaultParser) ParseNewGitRepoEvent(eventPayload []byte) (NewGitRepoEvent, error) {
+	var event NewGitRepoEvent
 	err := json.Unmarshal(eventPayload, &event)
 	return event, err
 }
