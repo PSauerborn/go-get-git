@@ -3,7 +3,9 @@ FROM golang:latest as build
 WORKDIR /app/server
 
 COPY ./api.go ./
-RUN go build ./api.go
+
+RUN go get -d -v ./...
+RUN CGO_ENABLED=0 GOOS=linux go build ./api.go
 
 FROM alpine:latest as server
 
