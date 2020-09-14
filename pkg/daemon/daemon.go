@@ -51,14 +51,14 @@ func (daemon GoGetGitDaemon) ProcessRabbitMessage(payload []byte) {
 			log.Debug(fmt.Sprintf("processing new GitPushEvent %+v", e))
 			err := handleGitPushEvent(e)
 			if err != nil {
-				log.Error(fmt.Errorf("unable to process event %v", err))
+				log.Error(fmt.Errorf("unable to process NewGitPush event: %v", err))
 			}
 			// handle event triggered when new application is registered
 		case events.NewGitRepoEvent:
 			log.Debug(fmt.Sprintf("processing new Git Application event %+v", e))
 			err := handleNewApplicationEvent(e)
 			if err != nil {
-				log.Error(fmt.Errorf("unable to process eventL %v", err))
+				log.Error(fmt.Errorf("unable to process NewGitRepo event: %v", err))
 			}
 			// handle default case
 		default:
@@ -77,9 +77,11 @@ func handleNewApplicationEvent(event events.NewGitRepoEvent) error {
 		return err
 	}
 	// clone git repository into given directory
-	cmd := exec.Command(fmt.Sprintf("git clone %s %s", event.RepoUrl, event.ApplicationDirectory))
+	cmd := exec.Command(fmt.Sprintf("git clone %s.%s %s", event.RepoUrl, "git", event.ApplicationDirectory))
 	stdout, err := cmd.Output()
-	log.Info(stdout)
+	if len(stdout) > 0 {
+		log.Info(stdout)
+	}
 	if err != nil {
 		log.Error(fmt.Errorf("unable to clone git repo %s into directory %s: %v", event.RepoUrl, event.ApplicationDirectory, err))
 		return err
@@ -91,9 +93,11 @@ func handleNewApplicationEvent(event events.NewGitRepoEvent) error {
 func handleGitPushEvent(event events.GitPushEvent) error {
 	log.Info(fmt.Sprintf("processing new git push event for directory %s", event.ApplicationDirectory))
 	// clone git repository into given directory
-	cmd := exec.Command(fmt.Sprintf("git clone %s %s", event.RepoUrl, event.ApplicationDirectory))
+	cmd := exec.Command(fmt.Sprintf("git clone %s.%s %s", event.RepoUrl, "git", event.ApplicationDirectory))
 	stdout, err := cmd.Output()
-	log.Info(stdout)
+	if len(stdout) > 0 {
+		log.Info(stdout)
+	}
 	if err != nil {
 		log.Error(fmt.Errorf("unable to clone git repo %s into directory %s: %v", event.RepoUrl, event.ApplicationDirectory, err))
 		return err
@@ -123,7 +127,9 @@ func buildDockerComposeFile(path string) error {
 	// build docker compose file
 	cmd := exec.Command(fmt.Sprintf("docker-compose run -f %s --build --remove-orphans -d", path))
 	stdout, err := cmd.Output()
-	log.Info(stdout)
+	if len(stdout) > 0 {
+		log.Info(stdout)
+	}
 	return err
 }
 
